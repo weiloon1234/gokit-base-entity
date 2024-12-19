@@ -1,0 +1,35 @@
+name: validate-ent
+
+on: push
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'go.mod'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies
+        run: |
+          go mod tidy
+          go mod download
+          go get golang.org/x/tools/go/ast/astutil@latest
+          go get golang.org/x/tools/go/packages@latest
+          go get golang.org/x/sync/errgroup@latest
+          go get golang.org/x/tools/imports@latest
+
+      - name: Generate Ent code
+        run: go run ent/generate.go
