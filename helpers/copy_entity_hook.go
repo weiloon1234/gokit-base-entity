@@ -79,7 +79,7 @@ func RunCopyBaseEntityHook(cmd *cobra.Command, args []string) {
 			// Replace the project name in the file content
 			updatedContent := []byte(strings.ReplaceAll(string(baseContent), fromModuleName, toModuleName))
 
-			if err := os.WriteFile(baseFile, updatedContent, 0644); err != nil {
+			if err := os.WriteFile(targetFile, updatedContent, 0644); err != nil {
 				fmt.Printf("Error writing %s: %v\n", hook, err)
 				continue
 			}
