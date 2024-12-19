@@ -13,21 +13,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout gokit-base-entity repository
-      - name: Checkout gokit-base-entity
-        uses: actions/checkout@v3
-        with:
-          repository: weiloon1234/gokit-base-entity # Replace with your repository name
-          path: gokit-base-entity
-
-      # Step 2: Clone gokit repository
+      # Step 1: Clone gokit repository
       - name: Clone Gokit Repository
         run: |
           git clone https://github.com/weiloon1234/gokit.git
           cd gokit
           git checkout main
 
-      # Step 3: Run make entity-update in Gokit
+      # Step 2: Run make entity-update in Gokit
       - name: Run entity-update
         run: |
           cd gokit

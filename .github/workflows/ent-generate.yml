@@ -32,4 +32,4 @@ jobs:
           go get golang.org/x/tools/imports@latest
 
       - name: Generate Ent code
-        run: go run ent/generate.go
+        run: go generate ./ent
