@@ -18,33 +18,46 @@ func AddSoftDeleteFilter(client interface{}) error {
 		return fmt.Errorf("client does not have a 'Use' method")
 	}
 
-	// Define the middleware function to exclude soft-deleted records
-	middleware := func(next interface{}) interface{} {
-		return func(ctx context.Context, mutation interface{}) (interface{}, error) {
-			// Apply global filters to exclude soft-deleted records
-			mutationVal := reflect.ValueOf(mutation)
-			wherePMethod := mutationVal.MethodByName("WhereP")
-			if wherePMethod.IsValid() {
-				wherePMethod.Call([]reflect.Value{
-					reflect.ValueOf(func(s *sql.Selector) {
-						s.Where(sql.IsNull(s.C("deleted_at")))
-					}),
-				})
+	// Define the middleware function dynamically
+	middleware := reflect.MakeFunc(
+		reflect.TypeOf(func(next interface{}) interface{} { return nil }),
+		func(args []reflect.Value) (results []reflect.Value) {
+			next := args[0]
+			return []reflect.Value{
+				reflect.MakeFunc(
+					reflect.TypeOf(func(ctx context.Context, mutation interface{}) (interface{}, error) { return nil, nil }),
+					func(innerArgs []reflect.Value) []reflect.Value {
+						mutation := innerArgs[1]
+
+						// Apply global filters to exclude soft-deleted records
+						mutationVal := reflect.ValueOf(mutation)
+						wherePMethod := mutationVal.MethodByName("WhereP")
+						if wherePMethod.IsValid() {
+							wherePMethod.Call([]reflect.Value{
+								reflect.ValueOf(func(s *sql.Selector) {
+									s.Where(sql.IsNull(s.C("deleted_at")))
+								}),
+							})
+						}
+
+						// Call the next mutator
+						results := reflect.ValueOf(next).Call(innerArgs)
+						if len(results) != 2 {
+							return []reflect.Value{
+								reflect.Zero(innerArgs[1].Type()), // Return nil for value
+								reflect.ValueOf(fmt.Errorf("unexpected number of return values from next mutator")),
+							}
+						}
+
+						return results
+					},
+				),
 			}
+		},
+	)
 
-			// Call the next mutator
-			results := reflect.ValueOf(next).Call([]reflect.Value{reflect.ValueOf(ctx), mutationVal})
-			if len(results) != 2 {
-				return nil, fmt.Errorf("unexpected number of return values from next mutator")
-			}
-
-			// Return the value and error
-			return results[0].Interface(), results[1].Interface().(error)
-		}
-	}
-
-	// Call the "Use" method with the middleware
-	useMethod.Call([]reflect.Value{reflect.ValueOf(middleware)})
+	// Call the "Use" method with the dynamically created middleware
+	useMethod.Call([]reflect.Value{middleware})
 
 	return nil
 }
