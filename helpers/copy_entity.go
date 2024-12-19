@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func RunCopyBaseSchema(cmd *cobra.Command, args []string) {
+func RunCopyBaseEntity(cmd *cobra.Command, args []string) {
 	baseSchemaDir := "./ent/schema" // Directory containing base schemas
 
 	// Dynamically determine the target project schema directory
