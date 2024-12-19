@@ -2,22 +2,49 @@ package hook
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/weiloon1234/gokit-base-entity/ent"
 )
 
 // AddSoftDeleteFilter applies a query filter to exclude soft-deleted records.
-func AddSoftDeleteFilter(client *ent.Client) {
-	client.Use(func(next ent.Mutator) ent.Mutator {
-		return ent.MutateFunc(func(ctx context.Context, mutation ent.Mutation) (ent.Value, error) {
-			// Apply global filters to exclude soft-deleted records.
-			if q, ok := mutation.(interface{ WhereP(...func(*sql.Selector)) }); ok {
-				q.WhereP(func(s *sql.Selector) {
-					s.Where(sql.IsNull(s.C("deleted_at")))
+func AddSoftDeleteFilter(client interface{}) error {
+	clientVal := reflect.ValueOf(client)
+
+	// Check if the client has a "Use" method
+	useMethod := clientVal.MethodByName("Use")
+	if !useMethod.IsValid() {
+		return fmt.Errorf("client does not have a 'Use' method")
+	}
+
+	// Define the middleware function to exclude soft-deleted records
+	middleware := func(next interface{}) interface{} {
+		return func(ctx context.Context, mutation interface{}) (interface{}, error) {
+			// Apply global filters to exclude soft-deleted records
+			mutationVal := reflect.ValueOf(mutation)
+			wherePMethod := mutationVal.MethodByName("WhereP")
+			if wherePMethod.IsValid() {
+				wherePMethod.Call([]reflect.Value{
+					reflect.ValueOf(func(s *sql.Selector) {
+						s.Where(sql.IsNull(s.C("deleted_at")))
+					}),
 				})
 			}
-			return next.Mutate(ctx, mutation)
-		})
-	})
+
+			// Call the next mutator
+			results := reflect.ValueOf(next).Call([]reflect.Value{reflect.ValueOf(ctx), mutationVal})
+			if len(results) != 2 {
+				return nil, fmt.Errorf("unexpected number of return values from next mutator")
+			}
+
+			// Return the value and error
+			return results[0].Interface(), results[1].Interface().(error)
+		}
+	}
+
+	// Call the "Use" method with the middleware
+	useMethod.Call([]reflect.Value{reflect.ValueOf(middleware)})
+
+	return nil
 }
