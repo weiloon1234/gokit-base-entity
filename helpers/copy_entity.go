@@ -11,7 +11,14 @@ import (
 )
 
 func RunCopyBaseEntity(cmd *cobra.Command, args []string) {
-	baseSchemaDir := "./ent/schema" // Directory containing base schemas
+	// Dynamically resolve the base schema directory
+	executablePath, err := os.Executable()
+	if err != nil {
+		fmt.Printf("Error resolving executable path: %v\n", err)
+		return
+	}
+	baseDir := filepath.Dir(filepath.Dir(executablePath))    // Resolve to package root
+	baseSchemaDir := filepath.Join(baseDir, "ent", "schema") // Base schemas directory
 
 	// Dynamically determine the target project schema directory
 	currentDir, err := os.Getwd()
@@ -19,7 +26,7 @@ func RunCopyBaseEntity(cmd *cobra.Command, args []string) {
 		fmt.Printf("Error getting current working directory: %v\n", err)
 		return
 	}
-	projectSchemaDir := filepath.Join(currentDir, "ent/schema")
+	projectSchemaDir := filepath.Join(currentDir, "ent", "schema") // Project schema directory
 
 	// Step 1: List all available entities in the base schema directory
 	entities, err := listEntities(baseSchemaDir)
