@@ -15,8 +15,10 @@ func AddSoftDeleteFilter(client interface{}) error {
 	// Check if the client has a "Use" method
 	useMethod := clientVal.MethodByName("Use")
 	if !useMethod.IsValid() {
-		return fmt.Errorf("client does not have a 'Use' method")
+		return fmt.Errorf("client does not have a 'Use' method, type: %T", client)
 	}
+
+	fmt.Println("Found 'Use' method, applying middleware")
 
 	// Define the middleware function dynamically
 	middleware := reflect.MakeFunc(
@@ -59,5 +61,6 @@ func AddSoftDeleteFilter(client interface{}) error {
 	// Call the "Use" method with the dynamically created middleware
 	useMethod.Call([]reflect.Value{middleware})
 
+	fmt.Println("Soft-delete filter applied successfully")
 	return nil
 }
