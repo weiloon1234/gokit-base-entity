@@ -91,12 +91,17 @@ func RunCopyBaseEntityHook(cmd *cobra.Command, args []string) {
 		fmt.Printf("======================\n")
 		for _, hook := range successHooks {
 			// Generate a hint message based on the hook file name
-			hookFuncName := cases.Title(language.Und).String(strings.ReplaceAll(hook, "_", ""))
+			hookFuncName := strings.ReplaceAll(
+				cases.Title(language.English).String(strings.ReplaceAll(hook, "_", " ")),
+				" ",
+				"",
+			)
 			fmt.Printf(" - %s\n", hook)
 			fmt.Printf("Hint: Remember to register the hook in your main.go file like this:\n")
 			fmt.Printf("      dbClient.Use(hook.%s)\n", hookFuncName)
 		}
 		fmt.Printf("======================\n")
+		fmt.Printf("Remember to apply in both web/CLI (cmd/cli/main.go and cmd/web/main.go):\n")
 		fmt.Printf("Remember to rebuild entity after copying hooks:\n")
 	} else {
 		fmt.Printf("======================\n")
