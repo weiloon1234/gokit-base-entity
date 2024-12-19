@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -111,4 +112,60 @@ func copyFile(src, dst string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
+}
+
+func getModuleName() (string, error) {
+	// Step 2: Dynamically determine the target project schema directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("error getting current working directory: %v", err)
+	}
+	goFile := filepath.Join(currentDir, "go.mod")
+
+	file, err := os.Open(goFile)
+	if err != nil {
+		return "", fmt.Errorf("error opening go.mod: %v", err)
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "module ") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "module ")), nil
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Error reading go.mod: %v\n", err)
+	}
+
+	return "", fmt.Errorf("module name not found in go.mod")
+}
+
+func getBaseModuleName() (string, error) {
+	baseDir := getBaseDir()
+	baseGoFile := filepath.Join(baseDir, "go.mod")
+
+	file, err := os.Open(baseGoFile)
+	if err != nil {
+		return "", fmt.Errorf("error opening go.mod: %v", err)
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "module ") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "module ")), nil
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Error reading go.mod: %v\n", err)
+	}
+
+	return "", fmt.Errorf("module name not found in go.mod")
 }
