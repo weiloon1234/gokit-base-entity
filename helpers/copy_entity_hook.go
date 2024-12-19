@@ -98,7 +98,7 @@ func RunCopyBaseEntityHook(cmd *cobra.Command, args []string) {
 			)
 			fmt.Printf(" - %s\n", hook)
 			fmt.Printf("Hint: Remember to register the hook in your main.go file like this:\n")
-			fmt.Printf("      dbClient.Use(hook.%s)\n", hookFuncName)
+			fmt.Printf("      hook.%s(entClient)\n", hookFuncName)
 		}
 		fmt.Printf("======================\n")
 		fmt.Printf("Remember to apply in both web/CLI (cmd/cli/main.go and cmd/web/main.go):\n")

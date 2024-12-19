@@ -1,0 +1,46 @@
+name: Sync Entity and Hooks to Gokit
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**' # Trigger for changes in any file in the `gokit-base-entity` repository
+
+jobs:
+  update-gokit:
+    name: Update Gokit Repository
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout gokit-base-entity repository
+      - name: Checkout gokit-base-entity
+        uses: actions/checkout@v3
+        with:
+          repository: weiloon1234/gokit-base-entity # Replace with your repository name
+          path: gokit-base-entity
+
+      # Step 2: Clone gokit repository
+      - name: Clone Gokit Repository
+        run: |
+          git clone https://github.com/weiloon1234/gokit.git
+          cd gokit
+          git checkout main
+
+      # Step 3: Run make entity-update in Gokit
+      - name: Run entity-update
+        run: |
+          cd gokit
+          make entity-update
+
+      # Step 4: Commit and push changes
+      - name: Commit and Push Changes
+        run: |
+          cd gokit
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Update entities from gokit-base-entity"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
