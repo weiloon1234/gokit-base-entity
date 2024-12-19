@@ -43,6 +43,7 @@ func RunCopyBaseEntityHook(cmd *cobra.Command, args []string) {
 	fmt.Scanln(&input)
 	selectedHooks := strings.Split(input, ",")
 
+	var successHooks []string
 	// Step 5: Check and copy entities
 	for _, hook := range selectedHooks {
 		hook = strings.TrimSpace(hook)
@@ -67,39 +68,44 @@ func RunCopyBaseEntityHook(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		//ChatGPT, before copy file, i would like to replace the project name in the file
 		// Replace the project name in the base file
 		baseContent, err := os.ReadFile(baseFile)
 		if err != nil {
 			fmt.Printf("Error reading %s: %v\n", hook, err)
 			continue
 		}
-		baseContent = []byte(strings.ReplaceAll(string(baseContent), fromModuleName, toModuleName))
-		if err := os.WriteFile(baseFile, baseContent, 0644); err != nil {
-			fmt.Printf("Error writing %s: %v\n", hook, err)
+
+		if !fileExists(targetFile) {
+			// Replace the project name in the file content
+			updatedContent := []byte(strings.ReplaceAll(string(baseContent), fromModuleName, toModuleName))
+
+			if err := os.WriteFile(baseFile, updatedContent, 0644); err != nil {
+				fmt.Printf("Error writing %s: %v\n", hook, err)
+				continue
+			}
+
+			fmt.Printf("Successfully copied %s to the project.\n", hook)
+		} else {
+			fmt.Printf("Hook %s already exists in the project. Skipping.\n", hook)
 			continue
 		}
+	}
 
-		var successHooks []string
-		// Copy the schema file
-		if err := copyFile(baseFile, targetFile); err != nil {
-			fmt.Printf("Error copying %s: %v\n", hook, err)
-			successHooks = append(successHooks, hook)
-		} else {
-			fmt.Printf("Successfully copied %s to the project.\n", hook)
+	if len(successHooks) > 0 {
+		fmt.Printf("======================\n")
+		for _, hook := range successHooks {
+			// Generate a hint message based on the hook file name
+			hookFuncName := cases.Title(language.Und).String(strings.ReplaceAll(hook, "_", ""))
+			fmt.Printf(" - %s\n", hook)
+			fmt.Printf("Hint: Remember to register the hook in your main.go file like this:\n")
+			fmt.Printf("      dbClient.Use(hook.%s)\n", hookFuncName)
 		}
-
-		if len(successHooks) > 0 {
-			fmt.Printf("======================\n")
-			for _, hook := range successHooks {
-				// Generate a hint message based on the hook file name
-				hookFuncName := cases.Title(language.Und).String(strings.ReplaceAll(hook, "_", ""))
-				fmt.Printf(" - %s\n", hook)
-				fmt.Printf("Hint: Remember to register the hook in your main.go file like this:\n")
-				fmt.Printf("      client.Use(hook.%s)\n", hookFuncName)
-			}
-			fmt.Printf("======================\n")
-		}
+		fmt.Printf("======================\n")
+		fmt.Printf("Remember to rebuild entity after copying hooks:\n")
+	} else {
+		fmt.Printf("======================\n")
+		fmt.Printf("No hooks copied.\n")
+		fmt.Printf("======================\n")
 	}
 }
 
