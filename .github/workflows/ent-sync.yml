@@ -7,6 +7,9 @@ on:
     paths:
       - '**' # Trigger for changes in any file in the `gokit-base-entity` repository
 
+permissions:
+  contents: write
+
 jobs:
   update-gokit:
     name: Update Gokit Repository
