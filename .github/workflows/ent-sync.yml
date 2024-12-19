@@ -33,7 +33,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Update entities from gokit-base-entity"
-          git push origin main
+          git commit -m "Update entities from gokit-base-entity" || echo "No changes to commit"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/weiloon1234/gokit.git main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
