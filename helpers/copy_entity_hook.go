@@ -25,7 +25,7 @@ func RunCopyBaseEntityHook(cmd *cobra.Command, args []string) {
 	}
 	projectHookDir := filepath.Join(currentDir, "ent", "hook")
 
-	// Step 3: List all available entities in the base schema directory
+	// Step 3: List all available hooks in the base hook directory
 	hooks, err := listHooks(baseHookDir)
 	if err != nil {
 		fmt.Printf("Error listing base schemas: %v\n", err)
@@ -44,7 +44,7 @@ func RunCopyBaseEntityHook(cmd *cobra.Command, args []string) {
 	selectedHooks := strings.Split(input, ",")
 
 	var successHooks []string
-	// Step 5: Check and copy entities
+	// Step 5: Check and copy hooks
 	for _, hook := range selectedHooks {
 		hook = strings.TrimSpace(hook)
 		if hook == "" {
@@ -75,20 +75,16 @@ func RunCopyBaseEntityHook(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		if !fileExists(targetFile) {
-			// Replace the project name in the file content
-			updatedContent := []byte(strings.ReplaceAll(string(baseContent), fromModuleName, toModuleName))
+		// Replace the project name in the file content
+		updatedContent := []byte(strings.ReplaceAll(string(baseContent), fromModuleName, toModuleName))
 
-			if err := os.WriteFile(targetFile, updatedContent, 0644); err != nil {
-				fmt.Printf("Error writing %s: %v\n", hook, err)
-				continue
-			}
-
-			fmt.Printf("Successfully copied %s to the project.\n", hook)
-		} else {
-			fmt.Printf("Hook %s already exists in the project. Skipping.\n", hook)
+		if err := os.WriteFile(targetFile, updatedContent, 0644); err != nil {
+			fmt.Printf("Error writing %s: %v\n", hook, err)
 			continue
 		}
+
+		fmt.Printf("Successfully copied %s to the project.\n", hook)
+		successHooks = append(successHooks, hook)
 	}
 
 	if len(successHooks) > 0 {
