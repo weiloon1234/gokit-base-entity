@@ -5,30 +5,26 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 func RunCopyBaseEntity(cmd *cobra.Command, args []string) {
-	// Dynamically resolve the base schema directory
-	executablePath, err := os.Executable()
-	if err != nil {
-		fmt.Printf("Error resolving executable path: %v\n", err)
-		return
-	}
-	baseDir := filepath.Dir(filepath.Dir(executablePath))    // Resolve to package root
-	baseSchemaDir := filepath.Join(baseDir, "ent", "schema") // Base schemas directory
+	// Step 1: Dynamically resolve the base schema directory
+	baseDir := getBaseDir()
+	baseSchemaDir := filepath.Join(baseDir, "ent", "schema")
 
-	// Dynamically determine the target project schema directory
+	// Step 2: Dynamically determine the target project schema directory
 	currentDir, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Error getting current working directory: %v\n", err)
 		return
 	}
-	projectSchemaDir := filepath.Join(currentDir, "ent", "schema") // Project schema directory
+	projectSchemaDir := filepath.Join(currentDir, "ent", "schema")
 
-	// Step 1: List all available entities in the base schema directory
+	// Step 3: List all available entities in the base schema directory
 	entities, err := listEntities(baseSchemaDir)
 	if err != nil {
 		fmt.Printf("Error listing base schemas: %v\n", err)
@@ -40,13 +36,13 @@ func RunCopyBaseEntity(cmd *cobra.Command, args []string) {
 		fmt.Printf(" - %s\n", entity)
 	}
 
-	// Step 2: Prompt user input
+	// Step 4: Prompt user input
 	fmt.Print("Enter the entities to copy (comma-separated): ")
 	var input string
 	fmt.Scanln(&input)
 	selectedEntities := strings.Split(input, ",")
 
-	// Step 3: Check and copy entities
+	// Step 5: Check and copy entities
 	for _, entity := range selectedEntities {
 		entity = strings.TrimSpace(entity)
 		if entity == "" {
@@ -69,6 +65,13 @@ func RunCopyBaseEntity(cmd *cobra.Command, args []string) {
 			fmt.Printf("Successfully copied %s to the project.\n", entity)
 		}
 	}
+}
+
+func getBaseDir() string {
+	// Use the directory of this source file during development
+	_, sourceFile, _, _ := runtime.Caller(0)
+	baseDir := filepath.Dir(filepath.Dir(sourceFile))
+	return baseDir
 }
 
 func listEntities(dir string) ([]string, error) {
